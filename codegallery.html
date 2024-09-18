@@ -1,0 +1,560 @@
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeGallery - Upload, Edit, and Delete</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f0f0f0;
+  }
+  h1 {
+    color: #333;
+    text-align: center;
+  }
+  #upload-container, .edit-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  #file-input, .edit-file-input {
+    display: none;
+  }
+  #file-label, .edit-file-label {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  #file-name, .edit-file-name {
+    margin-left: 10px;
+  }
+  #url-input, #explanation, .edit-url-input, .edit-explanation, #tag-input, .edit-tag-input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  #explanation, .edit-explanation {
+    height: 100px;
+    resize: vertical;
+  }
+  #submit-btn, .edit-submit-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  #submit-btn:hover, .edit-submit-btn:hover {
+    background-color: #45a049;
+  }
+  #gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
+  }
+  .gallery-item {
+    width: 300px;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    position: relative;
+  }
+  .gallery-item:hover {
+    transform: scale(1.05);
+  }
+  .gallery-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+  .gallery-item p {
+    padding: 15px;
+    margin: 0;
+    font-size: 14px;
+    color: #333;
+    line-height: 1.5;
+  }
+  .tag {
+    padding: 15px;
+    margin: 0;
+    font-size: 14px;
+    color: #777;
+  }
+  .edit-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;  
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  #modal, #edit-modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.9);
+  }
+  #modal-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 900px;
+    max-height: 80%;
+    object-fit: contain;
+  }
+  #modal-caption {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 900px;
+    text-align: center;
+    color: #ccc;
+    padding: 10px 0;
+    height: 150px;
+    overflow-y: auto;
+  }
+  #modal-content, #modal-caption {
+    animation-name: zoom;
+    animation-duration: 0.6s;
+  }
+  @keyframes zoom {
+    from {transform:scale(0)}
+    to {transform:scale(1)}
+  }
+  .close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+  .close:hover,
+  .close:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  #view-btn {
+    display: block;
+    width: 200px;
+    margin: 20px auto;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  #view-btn:hover {
+    background-color: #45a049;
+  }
+  #drag-area, .edit-drag-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+    transition: background-color 0.3s;
+  }
+  #drag-area.dragover, .edit-drag-area.dragover {
+    background-color: #e9e9e9;
+    border-color: #999;
+  }
+  .gallery-item input[type="checkbox"] {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1;
+  }
+  #delete-selected-btn {
+    display: block;
+    width: 200px;
+    margin: 20px auto;
+    padding: 10px;
+    background-color: #f44336;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #delete-selected-btn:hover {
+    background-color: #d32f2f;
+  }
+</style>
+</head>
+<body>
+  <h1>CodeGallery</h1>
+
+  <div id="upload-container">
+    <div id="drag-area">
+      <p>Drag & Drop your image here or</p>
+      <input type="file" id="file-input" accept="image/*">
+      <label for="file-input" id="file-label">Choose File</label>
+      <span id="file-name"></span>
+    </div>
+    <input type="text" id="url-input" placeholder="Or enter image URL">
+    <textarea id="explanation" placeholder="Enter explanation for the image or GIF"></textarea>
+    <input type="text" id="tag-input" placeholder="Enter a tag for the image">
+    <button id="submit-btn">Upload</button>
+  </div>
+
+  <button id="delete-selected-btn" style="display: none;">Delete Selected</button>
+  <div id="gallery"></div>
+
+  <div id="modal">
+    <span class="close">&times;</span>
+    <img id="modal-content">
+    <div id="modal-caption"></div>
+  </div>
+
+  <div id="edit-modal">
+    <div class="edit-container">
+      <span class="close">&times;</span>
+      <div class="edit-drag-area">
+        <p>Drag & Drop your image here or</p>
+        <input type="file" class="edit-file-input" accept="image/*">
+        <label for="edit-file-input" class="edit-file-label">Choose File</label>
+        <span class="edit-file-name"></span>
+      </div>
+      <input type="text" class="edit-url-input" placeholder="Or enter image URL">
+      <textarea class="edit-explanation" placeholder="Enter explanation for the image or GIF"></textarea>
+      <input type="text" class="edit-tag-input" placeholder="Enter a tag for the image">
+      <button class="edit-submit-btn">Update</button>
+    </div>
+  </div>
+
+  <a href="codegallery-view.html" id="view-btn">View Gallery</a>
+
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const fileLabel = document.getElementById('file-label');
+    const fileName = document.getElementById('file-name');
+    const urlInput = document.getElementById('url-input');
+    const explanation = document.getElementById('explanation');
+    const tagInput = document.getElementById('tag-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const gallery = document.getElementById('gallery');
+    const modal = document.getElementById('modal');
+    const editModal = document.getElementById('edit-modal');
+    const modalImg = document.getElementById("modal-content");
+    const captionText = document.getElementById("modal-caption");
+    const closeModal = document.getElementsByClassName("close")[0];
+    const closeEditModal = document.getElementsByClassName("close")[1];
+    const dragArea = document.getElementById('drag-area');
+    const editDragArea = document.querySelector('.edit-drag-area');
+    let lastChecked;
+    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+
+    function setupDragAndDrop(dragArea, fileInput) {
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dragArea.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dragArea.addEventListener(eventName, highlight, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dragArea.addEventListener(eventName, unhighlight, false);
+      });
+
+      function highlight() {
+        dragArea.classList.add('dragover');
+      }
+
+      function unhighlight() {
+        dragArea.classList.remove('dragover');
+      }
+
+      dragArea.addEventListener('drop', handleDrop, false);
+
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        handleFiles(files);
+      }
+    }
+
+    function handleFiles(files) {
+      if (files.length > 0) {
+        const file = files[0];
+        const fileNameElement = document.getElementById('file-name') || document.querySelector('.edit-file-name');
+        fileNameElement.textContent = file.name;
+      }
+    }
+
+    setupDragAndDrop(dragArea, fileInput);
+
+    fileInput.addEventListener('change', function() {
+      handleFiles(this.files);
+    });
+
+    function removeFromLocalStorage(index) {
+      let gallery = JSON.parse(localStorage.getItem('gallery')) || [];
+      gallery.splice(index, 1);
+      localStorage.setItem('gallery', JSON.stringify(gallery));
+    }
+
+    function deleteItem(items) {
+      items.forEach(item => {
+        const index = Array.from(gallery.children).indexOf(item);
+        item.remove();
+        removeFromLocalStorage(index);
+      });
+    }
+
+    submitBtn.addEventListener('click', function() {
+      let imageSource;
+      if (fileInput.files && fileInput.files[0]) {
+        imageSource = URL.createObjectURL(fileInput.files[0]);
+      } else if (urlInput.value) {
+        imageSource = urlInput.value;
+      } else {
+        alert('Please select a file or enter an image URL');
+        return;
+      }
+
+      if (!explanation.value) {
+        alert('Please enter an explanation for the image');
+        return;
+      }
+
+      const tag = tagInput.value.trim();
+      if (!tag) {
+        alert('Please enter a tag for the image');
+        return;
+      }
+
+      addToGallery(imageSource, explanation.value, tag);
+      removeDuplicates();
+      resetForm();
+    });
+
+    function addToGallery(imageSource, explanation, tag) {
+      const galleryItem = document.createElement('div');
+      galleryItem.className = 'gallery-item';
+      galleryItem.innerHTML = `
+        <input type="checkbox" class="item-checkbox">
+        <img src="${imageSource}" alt="Gallery image">
+        <p>${explanation}</p>
+        <p class="tag">Tag: ${tag}</p>
+        <button class="edit-btn">Edit</button>
+      `;
+      gallery.appendChild(galleryItem);
+      addClickListener(galleryItem);
+      addEditListener(galleryItem);
+      addCheckboxListener(galleryItem.querySelector('.item-checkbox'));
+      saveToLocalStorage(imageSource, explanation, tag);
+    }
+
+    function addCheckboxListener(checkbox) {
+      checkbox.addEventListener('click', function(e) {
+        if (!lastChecked) {
+          lastChecked = checkbox;
+          return;
+        }
+
+        if (e.shiftKey) {
+          const start = Array.from(gallery.querySelectorAll('.item-checkbox')).indexOf(checkbox);
+          const end = Array.from(gallery.querySelectorAll('.item-checkbox')).indexOf(lastChecked);
+          const checkboxes = Array.from(gallery.querySelectorAll('.item-checkbox'));
+
+          checkboxes.slice(Math.min(start, end), Math.max(start, end) + 1).forEach(cb => {
+            cb.checked = lastChecked.checked;
+          });
+        }
+
+        lastChecked = checkbox;
+        updateDeleteSelectedButton();
+      });
+    }
+
+    function updateDeleteSelectedButton() {
+      const checkedBoxes = gallery.querySelectorAll('.item-checkbox:checked');
+      deleteSelectedBtn.style.display = checkedBoxes.length > 0 ? 'block' : 'none';
+    }
+
+    deleteSelectedBtn.addEventListener('click', function() {
+      if (confirm('Are you sure you want to delete the selected items?')) {
+        const selectedItems = Array.from(gallery.querySelectorAll('.item-checkbox:checked')).map(cb => cb.closest('.gallery-item'));
+        deleteItem(selectedItems);
+        updateDeleteSelectedButton();
+      }
+    });
+
+    function addClickListener(item) {
+      item.querySelector('img').addEventListener('click', function() {
+        modal.style.display = "block";
+        modalImg.src = this.src;
+        captionText.innerHTML = item.querySelector('p').innerHTML;
+      });
+    }
+
+    function addEditListener(item) {
+      item.querySelector('.edit-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        showEditModal(item);
+      });
+    }
+
+    function showEditModal(item) {
+      editModal.style.display = "block";
+      const editFileInput = editModal.querySelector('.edit-file-input');
+      const editFileName = editModal.querySelector('.edit-file-name');
+      const editUrlInput = editModal.querySelector('.edit-url-input');
+      const editExplanation = editModal.querySelector('.edit-explanation');
+      const editTagInput = editModal.querySelector('.edit-tag-input');
+      const editSubmitBtn = editModal.querySelector('.edit-submit-btn');
+
+      editUrlInput.value = item.querySelector('img').src;
+      editExplanation.value = item.querySelector('p').textContent;
+      editTagInput.value = item.querySelector('.tag').textContent.replace('Tag: ', '');
+
+      setupDragAndDrop(editDragArea, editFileInput);
+
+      editFileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+      });
+
+      editSubmitBtn.onclick = function() {
+        let newImageSource;
+        if (editFileInput.files && editFileInput.files[0]) {
+          newImageSource = URL.createObjectURL(editFileInput.files[0]);
+        } else if (editUrlInput.value) {
+          newImageSource = editUrlInput.value;
+        } else {
+          alert('Please select a file or enter an image URL');
+          return;
+        }
+
+        if (!editExplanation.value) {
+          alert('Please enter an explanation for the image');
+          return;
+        }
+
+        const editTag = editTagInput.value.trim();
+        if (!editTag) {
+          alert('Please enter a tag for the image');
+          return;
+        }
+
+        item.querySelector('img').src = newImageSource;
+        item.querySelector('p').textContent = editExplanation.value;
+        item.querySelector('.tag').textContent = `Tag: ${editTag}`;
+        updateLocalStorage(item);
+        removeDuplicates();
+        editModal.style.display = "none";
+      };
+    }
+
+    closeModal.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    closeEditModal.onclick = function() {
+      editModal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+      if (event.target == editModal) {
+        editModal.style.display = "none";
+      }
+    }
+
+    function resetForm() {
+      fileInput.value = '';
+      fileName.textContent = '';
+      urlInput.value = '';
+      explanation.value = '';
+      tagInput.value = '';
+    }
+
+    function saveToLocalStorage(imageSource, explanation, tag) {
+      let gallery = JSON.parse(localStorage.getItem('gallery')) || [];
+      gallery.push({ imageSource, explanation, tag });
+      localStorage.setItem('gallery', JSON.stringify(gallery));
+    }
+
+    function updateLocalStorage(item) {
+      let gallery = JSON.parse(localStorage.getItem('gallery')) || [];
+      const index = Array.from(item.parentNode.children).indexOf(item);
+      gallery[index] = {
+        imageSource: item.querySelector('img').src,
+        explanation: item.querySelector('p').textContent,
+        tag: item.querySelector('.tag').textContent.replace('Tag: ', '')
+      };
+      localStorage.setItem('gallery', JSON.stringify(gallery));
+    }
+
+    function removeDuplicates() {
+      let gallery = JSON.parse(localStorage.getItem('gallery')) || [];
+      let uniqueGallery = [];
+      let tags = new Set();
+
+      gallery.forEach((item, index) => {
+        if (!tags.has(item.tag)) {
+          tags.add(item.tag);
+          uniqueGallery.push(item);
+        } else {
+          document.querySelectorAll('.gallery-item')[index]?.remove();
+        }
+      });
+
+      localStorage.setItem('gallery', JSON.stringify(uniqueGallery));
+    }
+
+    function loadGallery() {
+      let gallery = JSON.parse(localStorage.getItem('gallery')) || [];
+      gallery = gallery.filter(item => item.tag && item.tag.trim() !== '');
+      localStorage.setItem('gallery', JSON.stringify(gallery));
+      
+      gallery.forEach(item => addToGallery(item.imageSource, item.explanation, item.tag));
+      removeDuplicates();
+      
+      document.querySelectorAll('.item-checkbox').forEach(addCheckboxListener);
+    }
+
+    window.addEventListener('load', loadGallery);
+  </script>
+</body>
+</html>
