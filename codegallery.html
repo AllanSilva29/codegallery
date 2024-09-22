@@ -162,7 +162,7 @@
     text-decoration: none;
     cursor: pointer;
   }
-  #view-btn {
+  #view-btn, #organize-btn {
     display: block;
     width: 200px;
     margin: 20px auto;
@@ -174,8 +174,14 @@
     border-radius: 4px;
     font-size: 16px;
   }
-  #view-btn:hover {
+  #view-btn:hover, #organize-btn:hover {
     background-color: #45a049;
+  }
+  #organize-btn {
+    background-color: #2196F3;
+  }
+  #organize-btn:hover {
+    background-color: #1976D2;
   }
   #drag-area, .edit-drag-area {
     border: 2px dashed #ccc;
@@ -255,6 +261,7 @@
   </div>
 
   <a href="codegallery-view.html" id="view-btn">View Gallery</a>
+  <a href="codegallery-organize.html" id="organize-btn">Organize Gallery</a>
 
   <script>
     const fileInput = document.getElementById('file-input');
